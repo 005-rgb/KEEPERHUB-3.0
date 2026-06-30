@@ -108,7 +108,8 @@ export const users = pgTable(
     id: uuid("id")
       .primaryKey()
       .default(sql`gen_random_uuid()`),
-    email: text("email").notNull(),
+    // Nullable: user bisa daftar hanya dengan nomor HP (tanpa email)
+    email: text("email"),
     password_hash: text("password_hash").notNull(),
     nama: text("nama").notNull(),
     role: userRoleEnum("role").notNull(),
@@ -116,10 +117,14 @@ export const users = pgTable(
       .notNull()
       .default("free"),
     wizard_step: smallint("wizard_step").notNull().default(1),
+    // Login bisa pakai email ATAU nomor HP Indonesia (+62 / 08xx)
+    phone: text("phone"),
     ...timestamps,
   },
   (table) => [
     uniqueIndex("users_email_unique").on(table.email),
+    // Partial unique index: phone unik jika tidak null (dibuat manual di DB)
+    index("users_phone_idx").on(table.phone),
   ]
 );
 
