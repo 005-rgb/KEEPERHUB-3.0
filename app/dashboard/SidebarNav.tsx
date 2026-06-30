@@ -16,9 +16,9 @@ const TIER_COLOR: Record<string, string> = {
   enterprise: "#f59e0b",
 };
 
-const NAV = [
+const NAV_ALL = [
   {
-    href: "/dashboard", label: "Beranda",
+    href: "/dashboard", label: "Beranda", ownerOnly: false,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
@@ -27,7 +27,7 @@ const NAV = [
     ),
   },
   {
-    href: "/dashboard/aset", label: "Aset Saya",
+    href: "/dashboard/aset", label: "Aset Saya", ownerOnly: false,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
@@ -36,7 +36,7 @@ const NAV = [
     ),
   },
   {
-    href: "/dashboard/tugas", label: "Penugasan",
+    href: "/dashboard/tugas", label: "Penugasan", ownerOnly: false,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
@@ -46,7 +46,17 @@ const NAV = [
     ),
   },
   {
-    href: "/dashboard/dokumen", label: "Brankas Dokumen",
+    href: "/dashboard/staf", label: "Tim Staf", ownerOnly: true,
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+      </svg>
+    ),
+  },
+  {
+    href: "/dashboard/dokumen", label: "Brankas Dokumen", ownerOnly: false,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
@@ -54,7 +64,7 @@ const NAV = [
     ),
   },
   {
-    href: "/dashboard/notifikasi", label: "Radar Intelijen",
+    href: "/dashboard/notifikasi", label: "Radar Intelijen", ownerOnly: false,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49m-8.48-.01a6 6 0 010-8.49m11.31-2.82a10 10 0 010 14.14m-14.14 0a10 10 0 010-14.14"/>
@@ -120,7 +130,7 @@ export default function SidebarNav({ nama, role, tier }: { nama: string; role: s
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "1rem 0.75rem", display: "flex", flexDirection: "column", gap: 2 }}>
-        {NAV.map((item) => {
+        {NAV_ALL.filter((item) => !item.ownerOnly || role === "owner").map((item) => {
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
           return (
             <Link key={item.href} href={item.href} style={{
