@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { formatRupiah, formatTanggalPendek } from "@/lib/validations";
 import BuatTugasForm from "./BuatTugasForm";
 import AksiTugasModal from "./AksiTugasModal";
+import MagicLinkPanel from "./MagicLinkPanel";
 
 const STATUS_LABEL: Record<string, string> = {
   ditugaskan: "Ditugaskan",
@@ -179,6 +180,15 @@ export default function TugasClient({ tugasList, role, ownerId }: { tugasList: T
                         }}>
                           ⚡ Perlu tindakan
                         </span>
+                      )}
+                      {role === "owner" && (
+                        <MagicLinkPanel
+                          taskId={tugas.id}
+                          taskJudul={tugas.judul}
+                          stafNama={tugas.staf_nama}
+                          stafPhone={tugas.staf_phone}
+                          existingToken={tugas.magic_link_token}
+                        />
                       )}
                     </div>
                     <h3 style={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a", margin: "0 0 0.25rem" }}>{tugas.judul}</h3>

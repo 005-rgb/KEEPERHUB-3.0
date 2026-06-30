@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 
 // Route yang boleh diakses tanpa login
-const PUBLIC_PATHS = ["/login", "/register"];
-const PUBLIC_PREFIXES = ["/api/auth/", "/_next/", "/favicon"];
+const PUBLIC_PATHS = ["/login", "/register", "/magic"];
+const PUBLIC_PREFIXES = ["/api/auth/", "/api/magic-link", "/_next/", "/favicon"];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
