@@ -233,3 +233,181 @@ export const assets = pgTable(
     index("assets_owner_active_idx").on(table.owner_id, table.is_active),
   ]
 );
+
+// ─────────────────────────────────────────────
+// TABEL: tasks
+// Perintah servis dari owner ke staf.
+// Alur status: ditugaskan → menunggu_persetujuan → disetujui/ditolak → selesai
+// submitted_cost dari staf dipantau radar ALERT_MARKUP (>Rp 3jt untuk VEHICLE/ELECTRONIC)
+// magic_link_token: token WA unik untuk staf buka task tanpa login
+// ─────────────────────────────────────────────
+
+export const tasks = pgTable(
+  "tasks",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+
+    owner_id: uuid("owner_id").notNull(),          // si bos yang membuat tugas
+    asset_id: uuid("asset_id").notNull(),           // aset yang diservis
+    assigned_to: uuid("assigned_to").notNull(),     // staf yang ditugaskan
+
+    service_type: serviceTypeEnum("service_type").notNull(),
+    status: taskStatusEnum("status").notNull().default("ditugaskan"),
+
+    judul: text("judul").notNull(),
+    deskripsi: text("deskripsi"),
+
+    due_date: date("due_date"),
+
+    // Biaya yang diajukan staf setelah pekerjaan selesai
+    // Dipantau ALERT_MARKUP jika >3.000.000 untuk kategori VEHICLE/ELECTRONIC
+    submitted_cost: numeric("submitted_cost", { precision: 15, scale: 2 }),
+
+    // Biaya yang disetujui owner (bisa berbeda dari submitted_cost)
+    approved_cost: numeric("approved_cost", { precision: 15, scale: 2 }),
+
+    completion_photo_url: text("completion_photo_url"),  // foto bukti pekerjaan staf
+    staff_notes: text("staff_notes"),                    // catatan staf
+    owner_notes: text("owner_notes"),                    // catatan/alasan owner (approve/reject)
+
+    // Magic link WA untuk staf — token unik, satu kali pakai per tugas
+    magic_link_token: text("magic_link_token"),
+    magic_link_expires_at: timestamp("magic_link_expires_at", { withTimezone: true }),
+
+    ...timestamps,
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.owner_id],
+      foreignColumns: [users.id],
+      name: "fk_tasks_owner",
+    }).onDelete("cascade"),
+
+    foreignKey({
+      columns: [table.asset_id],
+      foreignColumns: [assets.id],
+      name: "fk_tasks_asset",
+    }).onDelete("cascade"),
+
+    foreignKey({
+      columns: [table.assigned_to],
+      foreignColumns: [users.id],
+      name: "fk_tasks_assigned_to",
+    }).onDelete("restrict"),   // staf tidak bisa dihapus selama punya task aktif
+
+    index("tasks_owner_id_idx").on(table.owner_id),
+    index("tasks_asset_id_idx").on(table.asset_id),
+    index("tasks_assigned_to_idx").on(table.assigned_to),
+    index("tasks_status_idx").on(table.status),
+
+    // Index untuk validasi magic link
+    uniqueIndex("tasks_magic_link_token_unique").on(table.magic_link_token),
+  ]
+);
+
+// ─────────────────────────────────────────────
+// TABEL: documents  (Brankas Dokumen)
+// Arsip surat-surat berharga per aset.
+// expiry_date dipakai untuk alert kadaluarsa di masa depan.
+// ─────────────────────────────────────────────
+
+export const documents = pgTable(
+  "documents",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+
+    owner_id: uuid("owner_id").notNull(),
+    asset_id: uuid("asset_id").notNull(),
+
+    document_type: documentTypeEnum("document_type").notNull(),
+    nama: text("nama").notNull(),          // label deskriptif dokumen
+    file_url: text("file_url").notNull(), // path/URL file tersimpan
+    expiry_date: date("expiry_date"),     // nullable — tidak semua dok punya exp date
+    notes: text("notes"),
+
+    ...timestamps,
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.owner_id],
+      foreignColumns: [users.id],
+      name: "fk_documents_owner",
+    }).onDelete("cascade"),
+
+    foreignKey({
+      columns: [table.asset_id],
+      foreignColumns: [assets.id],
+      name: "fk_documents_asset",
+    }).onDelete("cascade"),
+
+    index("documents_owner_id_idx").on(table.owner_id),
+    index("documents_asset_id_idx").on(table.asset_id),
+    index("documents_type_idx").on(table.document_type),
+  ]
+);
+
+// ─────────────────────────────────────────────
+// TABEL: notifications
+// Log semua notifikasi sistem — WA maupun in-app.
+// recipient_user_id: siapa yang menerima (owner atau staf)
+// asset_id / task_id nullable — tidak semua notif terkait keduanya
+// ─────────────────────────────────────────────
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+
+    owner_id: uuid("owner_id").notNull(),              // workspace owner
+    recipient_user_id: uuid("recipient_user_id").notNull(), // penerima actual
+
+    asset_id: uuid("asset_id"),   // nullable
+    task_id: uuid("task_id"),     // nullable
+
+    notification_type: notificationTypeEnum("notification_type").notNull(),
+
+    is_read: boolean("is_read").notNull().default(false),
+    sent_via_wa: boolean("sent_via_wa").notNull().default(false),
+    wa_sent_at: timestamp("wa_sent_at", { withTimezone: true }),  // nullable
+
+    ...timestamps,
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.owner_id],
+      foreignColumns: [users.id],
+      name: "fk_notifications_owner",
+    }).onDelete("cascade"),
+
+    foreignKey({
+      columns: [table.recipient_user_id],
+      foreignColumns: [users.id],
+      name: "fk_notifications_recipient",
+    }).onDelete("cascade"),
+
+    foreignKey({
+      columns: [table.asset_id],
+      foreignColumns: [assets.id],
+      name: "fk_notifications_asset",
+    }).onDelete("set null"),
+
+    foreignKey({
+      columns: [table.task_id],
+      foreignColumns: [tasks.id],
+      name: "fk_notifications_task",
+    }).onDelete("set null"),
+
+    index("notifications_owner_id_idx").on(table.owner_id),
+    index("notifications_recipient_idx").on(table.recipient_user_id),
+    index("notifications_type_idx").on(table.notification_type),
+
+    // Index untuk load inbox belum dibaca
+    index("notifications_unread_idx").on(table.recipient_user_id, table.is_read),
+  ]
+);
