@@ -1,1 +1,3 @@
 - [KeeperHub Stack & Conventions](keeperhub-stack.md) — Next.js 14 + Drizzle ORM + PostgreSQL, UI Indonesia, enums sudah di DB.
+- [Auth & Middleware](auth-middleware.md) — JWT HTTP-only cookie, middleware.ts protects all non-public routes, x-user-* headers set for server components.
+- [Asset Paywall](asset-paywall.md) — free tier max 3 assets, kode PAYWALL_TRIGGERED on 403, checked in POST /api/assets.
