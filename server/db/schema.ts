@@ -6,6 +6,8 @@ import {
   pgEnum,
   uuid,
   smallint,
+  numeric,
+  date,
   index,
   uniqueIndex,
   foreignKey,
@@ -165,5 +167,69 @@ export const tenantMemberships = pgTable(
     // Index tambahan untuk query cepat
     index("tenant_memberships_owner_id_idx").on(table.owner_id),
     index("tenant_memberships_member_user_id_idx").on(table.member_user_id),
+  ]
+);
+
+// ─────────────────────────────────────────────
+// TABEL: assets
+// Inti dari seluruh sistem. Semua servis, dokumen,
+// dan notifikasi berelasi ke tabel ini via asset_id.
+//
+// Kolom keuangan disimpan sebagai NUMERIC murni (tanpa simbol)
+// sesuai aturan lokalisasi — format Rupiah diterapkan di frontend.
+// ─────────────────────────────────────────────
+
+export const assets = pgTable(
+  "assets",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+
+    // Pemilik aset (root tenant)
+    owner_id: uuid("owner_id").notNull(),
+
+    // Kategori & identitas
+    category: assetCategoryEnum("category").notNull(),
+    nama: text("nama").notNull(),
+    deskripsi: text("deskripsi"),
+
+    // Data finansial — disimpan NUMERIC murni, diformat IDR di frontend
+    purchase_price: numeric("purchase_price", { precision: 15, scale: 2 }).notNull(),
+    purchase_date: date("purchase_date"),
+    current_value: numeric("current_value", { precision: 15, scale: 2 }),
+
+    // Running total biaya perawatan — dipakai trigger ALERT_LEMON_LAW
+    // (total_maintenance_cost > 30% dari purchase_price)
+    total_maintenance_cost: numeric("total_maintenance_cost", { precision: 15, scale: 2 })
+      .notNull()
+      .default("0"),
+
+    // Deadline untuk radar notifikasi (H-14 alert)
+    taxation_deadline: date("taxation_deadline"),    // → DEADLINE_TAX
+    warranty_end_date: date("warranty_end_date"),    // → DEADLINE_WARRANTY
+
+    // Foto utama aset
+    photo_url: text("photo_url"),
+
+    is_active: boolean("is_active").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    // FK: owner_id → users.id
+    foreignKey({
+      columns: [table.owner_id],
+      foreignColumns: [users.id],
+      name: "fk_assets_owner",
+    }).onDelete("cascade"),
+
+    // Index untuk listing aset per owner (query paling sering)
+    index("assets_owner_id_idx").on(table.owner_id),
+
+    // Index untuk filter per kategori
+    index("assets_category_idx").on(table.category),
+
+    // Composite index untuk listing aset aktif per owner
+    index("assets_owner_active_idx").on(table.owner_id, table.is_active),
   ]
 );
