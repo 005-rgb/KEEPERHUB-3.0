@@ -1,0 +1,15 @@
+# Konfigurasi Apache untuk cPanel Node.js App via Passenger
+# Pastikan mod_proxy dan mod_rewrite aktif di server
+
+Options -MultiViews
+RewriteEngine On
+
+# Arahkan semua request ke Passenger (Next.js server.js)
+PassengerEnabled on
+PassengerStartupFile server.js
+PassengerAppType node
+PassengerAppRoot /home/USERNAME/keeperhub
+
+# Bypass untuk file statis di folder public/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ http://localhost:%{ENV:PORT}/$1 [P,L]

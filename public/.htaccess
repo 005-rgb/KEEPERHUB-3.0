@@ -1,0 +1,7 @@
+# Redirect semua request ke Next.js Passenger app
+# File ini hanya sebagai referensi — .htaccess utama ada di root domain
+Options -MultiViews
+RewriteEngine On
+RewriteRule ^$ http://127.0.0.1:%{ENV:PORT}/ [P,L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule (.*) http://127.0.0.1:%{ENV:PORT}/$1 [P,L]
