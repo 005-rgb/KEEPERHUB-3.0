@@ -103,8 +103,6 @@ Konfirmasi item berikut di panel hosting Anda sebelum mulai:
 - [ ] **Akses SSH** aktif (untuk `npm install` di server)
 - [ ] **Passenger** sudah terinstall (standar cPanel CloudLinux)
 
-> ⚠️ **Catatan Database:** Banyak shared hosting Indonesia hanya menyediakan **MySQL/MariaDB**, bukan PostgreSQL. Jika hosting Anda hanya punya MySQL, konfirmasi ke kami — perlu migrasi driver dari `pg` ke `mysql2` + update schema Drizzle.
-
 ---
 
 ### Langkah 1 — Build di Replit
