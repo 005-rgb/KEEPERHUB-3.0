@@ -18,9 +18,25 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect("/login");
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter','Segoe UI',sans-serif", background: "#f1f5f9" }}>
+    <div style={{
+      display: "flex",
+      minHeight: "100vh",
+      fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
+      backgroundColor: "#f3f4ff",
+      backgroundImage: [
+        "radial-gradient(at 5% 10%, rgba(99,102,241,0.10) 0px, transparent 55%)",
+        "radial-gradient(at 95% 5%, rgba(139,92,246,0.09) 0px, transparent 50%)",
+        "radial-gradient(at 85% 90%, rgba(99,102,241,0.07) 0px, transparent 50%)",
+        "radial-gradient(at 15% 80%, rgba(167,139,250,0.07) 0px, transparent 50%)",
+      ].join(", "),
+    }}>
       <SidebarNav nama={user.nama} role={user.role} tier={user.subscription_tier} />
-      <main style={{ flex: 1, padding: "2rem", overflowY: "auto" }}>
+      <main style={{
+        flex: 1,
+        padding: "2rem 2.5rem",
+        overflowY: "auto",
+        minWidth: 0,
+      }}>
         {children}
       </main>
     </div>

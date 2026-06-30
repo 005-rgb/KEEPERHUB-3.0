@@ -5,20 +5,24 @@ import Link from "next/link";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: "0.65rem 0.875rem",
+  padding: "0.75rem 1rem",
   border: "1.5px solid #e2e8f0",
-  borderRadius: "8px",
+  borderRadius: 12,
   fontSize: "0.9rem",
   outline: "none",
   boxSizing: "border-box",
+  background: "rgba(255,255,255,0.9)",
+  color: "#0f172a",
+  transition: "border-color 0.2s, box-shadow 0.2s",
 };
 
 const labelStyle: React.CSSProperties = {
   display: "block",
-  fontSize: "0.8rem",
+  fontSize: "0.78rem",
   fontWeight: 600,
   color: "#374151",
-  marginBottom: "0.35rem",
+  marginBottom: "0.4rem",
+  letterSpacing: "0.2px",
 };
 
 export default function LoginPage() {
@@ -26,6 +30,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ identifier: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState<string | null>(null);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -56,12 +61,11 @@ export default function LoginPage() {
 
   return (
     <>
-      <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#0f172a", marginBottom: "1.5rem", textAlign: "center" }}>
+      <h2 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#0f172a", marginBottom: "1.5rem", textAlign: "center" }}>
         Masuk ke Akun Anda
       </h2>
 
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        {/* Identifier */}
         <div>
           <label style={labelStyle}>Email atau Nomor HP</label>
           <input
@@ -70,12 +74,17 @@ export default function LoginPage() {
             placeholder="contoh@email.com atau 08xx-xxxx-xxxx"
             value={form.identifier}
             onChange={handleChange}
+            onFocus={() => setFocused("identifier")}
+            onBlur={() => setFocused(null)}
             required
-            style={inputStyle}
+            style={{
+              ...inputStyle,
+              borderColor: focused === "identifier" ? "#6366f1" : "#e2e8f0",
+              boxShadow: focused === "identifier" ? "0 0 0 3px rgba(99,102,241,0.12)" : "none",
+            }}
           />
         </div>
 
-        {/* Kata sandi */}
         <div>
           <label style={labelStyle}>Kata Sandi</label>
           <input
@@ -84,37 +93,47 @@ export default function LoginPage() {
             placeholder="Kata sandi Anda"
             value={form.password}
             onChange={handleChange}
+            onFocus={() => setFocused("password")}
+            onBlur={() => setFocused(null)}
             required
-            style={inputStyle}
+            style={{
+              ...inputStyle,
+              borderColor: focused === "password" ? "#6366f1" : "#e2e8f0",
+              boxShadow: focused === "password" ? "0 0 0 3px rgba(99,102,241,0.12)" : "none",
+            }}
           />
         </div>
 
-        {/* Error */}
         {error && (
           <div style={{
-            background: "#fef2f2", border: "1px solid #fecaca",
-            borderRadius: "8px", padding: "0.65rem 0.875rem",
+            background: "rgba(254,242,242,0.9)", border: "1px solid #fecaca",
+            borderRadius: 10, padding: "0.7rem 0.9rem",
             fontSize: "0.82rem", color: "#dc2626",
+            display: "flex", alignItems: "center", gap: "0.5rem",
           }}>
-            {error}
+            <span>⚠</span> {error}
           </div>
         )}
 
-        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
           style={{
             width: "100%",
-            padding: "0.75rem",
-            background: loading ? "#94a3b8" : "#0f172a",
+            padding: "0.8rem",
+            background: loading
+              ? "#a5b4fc"
+              : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
             color: "#fff",
             border: "none",
-            borderRadius: "8px",
+            borderRadius: 12,
             fontSize: "0.9rem",
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: loading ? "not-allowed" : "pointer",
             marginTop: "0.25rem",
+            boxShadow: loading ? "none" : "0 4px 15px rgba(99,102,241,0.35)",
+            letterSpacing: "0.2px",
+            transition: "opacity 0.2s, transform 0.1s",
           }}
         >
           {loading ? "Memproses..." : "Masuk"}
@@ -123,7 +142,7 @@ export default function LoginPage() {
 
       <p style={{ textAlign: "center", fontSize: "0.82rem", color: "#64748b", marginTop: "1.5rem" }}>
         Belum punya akun?{" "}
-        <Link href="/register" style={{ color: "#0f172a", fontWeight: 600, textDecoration: "none" }}>
+        <Link href="/register" style={{ color: "#6366f1", fontWeight: 700 }}>
           Daftar sekarang
         </Link>
       </p>
