@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { getUserFromHeaders } from "@/lib/server-auth";
 import { db } from "@/server/db";
-import { users } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { users, notifications } from "@/server/db/schema";
+import { eq, and } from "drizzle-orm";
 import SidebarNav from "./SidebarNav";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +17,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) redirect("/login");
 
+  const unreadRows = await db
+    .select({ id: notifications.id })
+    .from(notifications)
+    .where(
+      and(
+        eq(notifications.recipient_user_id, auth.userId),
+        eq(notifications.is_read, false)
+      )
+    )
+    .limit(99);
+
+  const unreadCount = unreadRows.length;
+
   return (
     <div style={{
       display: "flex",
@@ -30,7 +43,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         "radial-gradient(at 15% 80%, rgba(167,139,250,0.07) 0px, transparent 50%)",
       ].join(", "),
     }}>
-      <SidebarNav nama={user.nama} role={user.role} tier={user.subscription_tier} />
+      <SidebarNav nama={user.nama} role={user.role} tier={user.subscription_tier} unreadCount={unreadCount} />
       <main style={{
         flex: 1,
         padding: "2rem 2.5rem",

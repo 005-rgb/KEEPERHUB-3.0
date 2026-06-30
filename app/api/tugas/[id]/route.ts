@@ -4,6 +4,12 @@ import { tasks, assets, notifications } from "@/server/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { getUserFromCookie } from "@/lib/server-auth";
 
+type AssetRow = {
+  id: string;
+  purchase_price: string | null;
+  total_maintenance_cost: string | null;
+};
+
 // ── PATCH /api/tugas/[id] — transisi status tugas ──────────────
 //
 // Aksi yang diizinkan:
@@ -160,6 +166,27 @@ export async function PATCH(
       await db.execute(
         sql`UPDATE assets SET total_maintenance_cost = total_maintenance_cost + ${biayaDisetujui}, updated_at = NOW() WHERE id = ${tugas.asset_id}`
       );
+
+      // Cek ALERT_LEMON_LAW: total_maintenance_cost > 30% dari purchase_price
+      const [asetTerkini] = await db
+        .select({ id: assets.id, purchase_price: assets.purchase_price, total_maintenance_cost: assets.total_maintenance_cost })
+        .from(assets)
+        .where(eq(assets.id, tugas.asset_id))
+        .limit(1) as AssetRow[];
+
+      if (asetTerkini) {
+        const hargaBeli = Number(asetTerkini.purchase_price ?? 0);
+        const totalPerawatan = Number(asetTerkini.total_maintenance_cost ?? 0) + biayaDisetujui;
+        if (hargaBeli > 0 && totalPerawatan / hargaBeli > 0.3) {
+          await db.insert(notifications).values({
+            owner_id: tugas.owner_id,
+            recipient_user_id: tugas.owner_id,
+            asset_id: tugas.asset_id,
+            task_id: tugas.id,
+            notification_type: "ALERT_LEMON_LAW",
+          });
+        }
+      }
     }
 
     return NextResponse.json({ pesan: "Tugas selesai. Biaya perawatan aset diperbarui." });

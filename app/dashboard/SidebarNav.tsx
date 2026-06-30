@@ -73,7 +73,7 @@ const NAV_ALL = [
   },
 ];
 
-export default function SidebarNav({ nama, role, tier }: { nama: string; role: string; tier: string }) {
+export default function SidebarNav({ nama, role, tier, unreadCount = 0 }: { nama: string; role: string; tier: string; unreadCount?: number }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -132,6 +132,8 @@ export default function SidebarNav({ nama, role, tier }: { nama: string; role: s
       <nav style={{ flex: 1, padding: "1rem 0.75rem", display: "flex", flexDirection: "column", gap: 2 }}>
         {NAV_ALL.filter((item) => !item.ownerOnly || role === "owner").map((item) => {
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const isRadar = item.href === "/dashboard/notifikasi";
+          const showBadge = isRadar && unreadCount > 0;
           return (
             <Link key={item.href} href={item.href} style={{
               display: "flex", alignItems: "center", gap: "0.625rem",
@@ -148,7 +150,20 @@ export default function SidebarNav({ nama, role, tier }: { nama: string; role: s
               <span style={{ color: active ? "#a5b4fc" : "#4f5d7a", display: "flex" }}>
                 {item.icon}
               </span>
-              {item.label}
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {showBadge && (
+                <span style={{
+                  minWidth: 18, height: 18,
+                  background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                  color: "#fff", fontSize: "0.6rem", fontWeight: 800,
+                  borderRadius: 99, display: "flex", alignItems: "center",
+                  justifyContent: "center", padding: "0 4px",
+                  boxShadow: "0 0 0 2px rgba(15,23,42,0.6)",
+                  letterSpacing: "-0.3px",
+                }}>
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </Link>
           );
         })}
