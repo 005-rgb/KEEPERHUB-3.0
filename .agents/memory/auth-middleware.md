@@ -1,6 +1,6 @@
 ---
 name: Auth & Middleware
-description: JWT cookie session, middleware route protection, and header-based user extraction pattern.
+description: JWT cookie session, middleware route protection, header-based user extraction, and critical Edge Runtime fix.
 ---
 
 ## Cookie & JWT
@@ -12,6 +12,13 @@ description: JWT cookie session, middleware route protection, and header-based u
 - Public paths: `/login`, `/register`, `/api/auth/*`, `/_next/*`, `/favicon`
 - Everything else → verify JWT → redirect `/login` if invalid/missing
 - Sets `x-user-id`, `x-user-role`, `x-user-tier` headers on valid requests
+
+## CRITICAL: Edge Runtime Fix (jsonwebtoken → jose)
+`jsonwebtoken` does NOT work in Next.js Edge Runtime (where middleware.ts always runs). `jwt.verify()` fails silently, causing ALL authenticated requests to redirect to /login even with a valid cookie.
+
+**Fix applied:** Created `lib/auth-edge.ts` using `jose` (`jwtVerify`) which is Edge-compatible. Middleware imports `verifyTokenEdge` from there — NOT from `lib/auth.ts`.
+
+**Rule:** Any JWT verification in `middleware.ts` must use `lib/auth-edge.ts`. Signing and Node.js-side verification (Route Handlers) continue using `lib/auth.ts` with `jsonwebtoken`.
 
 ## Server-side User Extraction
 - Server Components & layouts: `getUserFromHeaders()` reads headers set by middleware

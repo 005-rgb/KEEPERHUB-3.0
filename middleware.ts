@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { verifyTokenEdge } from "@/lib/auth-edge";
 
-// Route yang boleh diakses tanpa login
 const PUBLIC_PATHS = ["/login", "/register", "/magic"];
 const PUBLIC_PREFIXES = ["/api/auth/", "/api/magic-link", "/_next/", "/favicon"];
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Izinkan asset statis, _next, dan public routes
   if (
     PUBLIC_PREFIXES.some((p) => pathname.startsWith(p)) ||
     PUBLIC_PATHS.includes(pathname)
@@ -16,20 +14,18 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Cek token JWT dari cookie
   const token = req.cookies.get("keeperhub_token")?.value;
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  const payload = verifyToken(token);
+  const payload = await verifyTokenEdge(token);
   if (!payload) {
     const res = NextResponse.redirect(new URL("/login", req.url));
     res.cookies.delete("keeperhub_token");
     return res;
   }
 
-  // Tambahkan user info ke header agar server components bisa baca
   const headers = new Headers(req.headers);
   headers.set("x-user-id", payload.userId);
   headers.set("x-user-role", payload.role);
