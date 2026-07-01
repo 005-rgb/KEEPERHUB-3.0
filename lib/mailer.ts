@@ -1,25 +1,8 @@
-import nodemailer from "nodemailer";
+import { spawn } from "child_process";
+import path from "path";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 465,
-  secure: Number(process.env.SMTP_PORT) === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
-export async function sendPasswordResetEmail(
-  toEmail: string,
-  toNama: string,
-  resetUrl: string
-) {
-  await transporter.sendMail({
-    from: `"KeeperHub" <${process.env.SMTP_USER}>`,
-    to: toEmail,
-    subject: "Reset Kata Sandi KeeperHub",
-    html: `
+function buildResetEmailHtml(toNama: string, resetUrl: string): string {
+  return `
 <!DOCTYPE html>
 <html lang="id">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -73,7 +56,7 @@ export async function sendPasswordResetEmail(
             <td style="padding-top:24px;">
               <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
                 Jika Anda tidak meminta reset kata sandi, abaikan email ini. Akun Anda tetap aman.<br><br>
-                &copy; ${new Date().getFullYear()} KeeperHub · Manajemen Aset HNWI
+                &copy; ${new Date().getFullYear()} KeeperHub &middot; Manajemen Aset HNWI
               </p>
             </td>
           </tr>
@@ -82,7 +65,53 @@ export async function sendPasswordResetEmail(
     </tr>
   </table>
 </body>
-</html>
-    `.trim(),
+</html>`.trim();
+}
+
+/**
+ * Kirim email via child process Node.js agar tidak memblokir
+ * Next.js API route (menghindari timeout di Replit sandbox).
+ */
+export function sendPasswordResetEmail(
+  toEmail: string,
+  toNama: string,
+  resetUrl: string
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const scriptPath = path.join(process.cwd(), "scripts", "send-email.js");
+    const payload = JSON.stringify({
+      to: toEmail,
+      toNama,
+      subject: "Reset Kata Sandi KeeperHub",
+      html: buildResetEmailHtml(toNama, resetUrl),
+    });
+
+    const child = spawn(process.execPath, [scriptPath], {
+      env: { ...process.env },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    child.stdin.write(payload);
+    child.stdin.end();
+
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (d: Buffer) => (stdout += d.toString()));
+    child.stderr.on("data", (d: Buffer) => (stderr += d.toString()));
+
+    child.on("close", (code: number) => {
+      if (code === 0) {
+        console.log("[mailer] Email terkirim ke:", toEmail);
+        resolve();
+      } else {
+        console.error("[mailer] Gagal kirim email:", stderr || stdout);
+        reject(new Error(stderr || "Email gagal terkirim"));
+      }
+    });
+
+    child.on("error", (err: Error) => {
+      console.error("[mailer] Child process error:", err.message);
+      reject(err);
+    });
   });
 }
