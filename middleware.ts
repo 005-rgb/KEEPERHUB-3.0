@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyTokenEdge } from "@/lib/auth-edge";
 
-const PUBLIC_PATHS = ["/login", "/register", "/magic"];
+const PUBLIC_PATHS = ["/login", "/register", "/magic", "/lupa-kata-sandi", "/reset-password"];
 const PUBLIC_PREFIXES = ["/api/auth/", "/api/magic-link", "/_next/", "/favicon"];
 
 export async function middleware(req: NextRequest) {

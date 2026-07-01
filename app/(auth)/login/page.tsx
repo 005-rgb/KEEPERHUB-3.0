@@ -140,7 +140,13 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p style={{ textAlign: "center", fontSize: "0.82rem", color: "#64748b", marginTop: "1.5rem" }}>
+      <p style={{ textAlign: "center", fontSize: "0.82rem", color: "#64748b", marginTop: "1rem" }}>
+        <Link href="/lupa-kata-sandi" style={{ color: "#6366f1", fontWeight: 600 }}>
+          Lupa kata sandi?
+        </Link>
+      </p>
+
+      <p style={{ textAlign: "center", fontSize: "0.82rem", color: "#64748b", marginTop: "0.5rem" }}>
         Belum punya akun?{" "}
         <Link href="/register" style={{ color: "#6366f1", fontWeight: 700 }}>
           Daftar sekarang
